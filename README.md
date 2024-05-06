@@ -2,16 +2,9 @@
 
 This is a simple simulation of a spring coupled pendulum. the physics of the system is described by the following equations:
 
-d_theta1 = dtheta1
+![alt text](Image/equations.png)
 
-dd_theta1 = A*sin(theta1) - B*sin(theta1 - theta2) * \
-    (1 - (d / sqrt(d**2 + 2*l**2*(1 - cos(theta1 + theta2))))) - x*dtheta1
-
-d_theta2 = dtheta2
-
-dd_theta2 = A*sin(theta2) - C*sin(theta2 - theta1) * \
-    (1 - (d / sqrt(d**2 + 2*l**2*(1 - cos(theta1 + theta2))))) - x*dtheta2
-
+Schematic of the system:
 
 ![alt text](Image/image.png)
 
