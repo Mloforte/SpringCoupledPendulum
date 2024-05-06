@@ -57,13 +57,7 @@ class Pendulum:
             self.position1[0]), int(self.position1[1])), 15)
         pygame.draw.circle(surface, self.color, (int(
             self.position2[0]), int(self.position2[1])), 15)
-        # # Last position of pendulum 1
-        # self.position1 = [self.x1[-1], self.y1[-1]]
-        # # Last position of pendulum 2
-        # self.position2 = [self.x2[-1], self.y2[-1]]
-        # print(self.position1)
-        # print(self.position2)
-
+        
     def draw(self, surface):
         pygame.draw.line(surface, white, self.pivot1, self.position1)
         pygame.draw.line(surface, white, self.pivot2, self.position2)

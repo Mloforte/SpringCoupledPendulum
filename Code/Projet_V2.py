@@ -7,10 +7,11 @@ import pygame
 import sys
 
 width, height = 800, 400
-# Initialisation de Pygame
+
+# Initialisation of Pygame
 pygame.init()
 
-# Création de la fenêtre
+# Creation of the fenêtre
 background = pygame.display.set_mode((800, 800))
 
 # COLORS
@@ -19,21 +20,24 @@ black = (0, 0, 0)
 gray = (150, 150, 150)
 Dark_red = (150, 0, 0)
 
+# Loop parameters
 Out = False  # if True,out of while loop, and close pygame
+
 # System constants
-m1 = m2 = 100  # masse du pendule
-l = 50  # longueur de la suspension
-d = 100  # distance entre les pendules où le ressort est attaché
-k = 50.0  # coefficient de raideur du ressort
-g = 9.8  # accélération due à la gravité
-x = 0.1  # damping factor
+m1 = 100  # pendulum mass 1
+m2 = 100  # pendulum mass 2
+l = 50  # suspension length
+d = 100  # distance between pendulums where the spring is attached
+k = 50.0  # coefficient of spring stiffness
+g = 9.8  # acceleration due to gravity
+x = 0.1  # damping factor for lose of energy due to friction
 acceleration = False
 
 # Initial conditions
-theta1_0 = -pi/4  # déviation initiale du premier pendule
-theta2_0 = -pi/2  # déviation initiale du deuxième pendule
-dot_theta1_0 = 0.0  # vitesse angulaire initiale du premier pendule
-dot_theta2_0 = 0.0  # vitesse angulaire initiale du deuxième pendule
+theta1_0 = -pi/4  # deviation of the first pendulum
+theta2_0 = -pi/2  # deviation of the second pendulum
+dot_theta1_0 = 1.0  # intial angular velocity of the first pendulum
+dot_theta2_0 = 0.0  # initial angular velocity of the second pendulum
 
 # Calculation of scaled parameters
 A = 3/2
@@ -86,12 +90,17 @@ def redraw():  # Clean up the screen and start a new grid and new frame of pendu
 
 def G_adim(y, t):
     theta1, dtheta1, theta2, dtheta2 = y
+
     d_theta1 = dtheta1
+
     dd_theta1 = A*sin(theta1) - B*sin(theta1 - theta2) * \
         (1 - (d / sqrt(d**2 + 2*l**2*(1 - cos(theta1 + theta2))))) - x*dtheta1
+    
     d_theta2 = dtheta2
+
     dd_theta2 = A*sin(theta2) - C*sin(theta2 - theta1) * \
         (1 - (d / sqrt(d**2 + 2*l**2*(1 - cos(theta1 + theta2))))) - x*dtheta2
+    
     return np.array([d_theta1, dd_theta1, d_theta2, dd_theta2])
 
 
@@ -100,9 +109,7 @@ pendulum = ball((-d/2 + width/2, l + height/4),
                 (d/2 + width/2, l + height/4), 5)
 
 # Time points to solve the ODE for
-t = np.linspace(0, 10, 1000)
-
-# fsolve(g_adim)
+t = np.linspace(0, 20, 1000)
 
 # Solve the ODE
 y0 = [theta1_0, dot_theta1_0, theta2_0, dot_theta1_0]
@@ -128,6 +135,7 @@ ax.grid(True)
 # Update plot in a loop
 t = 0
 while not Out:
+    print(t)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             Out = True  # Si la fenêtre est fermée, sortir de la boucle
@@ -142,7 +150,10 @@ while not Out:
 
         # Solve the ODE
         y0 = [theta1_0, dot_theta1_0, theta2_0, dot_theta2_0]
-        sol = odeint(G_adim, y0, [0, t])
+        sol, info = odeint(G_adim, y0, [0, t], full_output=True)
+
+        # Accédez aux informations détaillées
+        print(info)
 
         # Extract theta1 and theta2
         theta1 = sol[-1, 0]
