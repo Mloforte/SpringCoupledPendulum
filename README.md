@@ -2,7 +2,7 @@
 
 This is a simple simulation of a spring coupled pendulum. the physics of the system is described by the following equations:
 
-![alt text](Image/equations.png)
+![alt text](Image/Equations.png)
 
 Schematic of the system:
 
