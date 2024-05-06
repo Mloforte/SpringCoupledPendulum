@@ -85,7 +85,6 @@ def run():
     stop = False
 
     while not stop:
-        t += 0.1
         clock.tick(fps)
         surface.fill(black)
         for event in pygame.event.get():
