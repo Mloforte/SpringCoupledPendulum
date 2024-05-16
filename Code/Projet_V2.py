@@ -5,13 +5,15 @@ from scipy.optimize import fsolve
 from math import sin, cos, pi, sqrt
 import pygame
 import sys
+from scipy.fft import fft, fftfreq
+
 
 width, height = 800, 400
 
-# Initialisation of Pygame
+# # Initialisation of Pygame
 pygame.init()
 
-# Creation of the fenêtre
+# # Creation of the fenêtre
 background = pygame.display.set_mode((800, 800))
 
 # COLORS
@@ -28,15 +30,15 @@ m1 = 100  # pendulum mass 1
 m2 = 100  # pendulum mass 2
 l = 50  # suspension length
 d = 100  # distance between pendulums where the spring is attached
-k = 50.0  # coefficient of spring stiffness
+k = 5.0  # coefficient of spring stiffness
 g = 9.8  # acceleration due to gravity
-x = 0.1  # damping factor for lose of energy due to friction
+x = 0.5  # damping factor for lose of energy due to friction
 acceleration = False
 
 # Initial conditions
-theta1_0 = -pi/4  # deviation of the first pendulum
-theta2_0 = -pi/2  # deviation of the second pendulum
-dot_theta1_0 = 1.0  # intial angular velocity of the first pendulum
+theta1_0 = -pi/2  # deviation of the first pendulum
+theta2_0 = -pi/4  # deviation of the second pendulum
+dot_theta1_0 = 0.0  # intial angular velocity of the first pendulum
 dot_theta2_0 = 0.0  # initial angular velocity of the second pendulum
 
 # Calculation of scaled parameters
@@ -109,7 +111,7 @@ pendulum = ball((-d/2 + width/2, l + height/4),
                 (d/2 + width/2, l + height/4), 5)
 
 # Time points to solve the ODE for
-t = np.linspace(0, 20, 1000)
+t = np.linspace(0, 100, 1000)
 
 # Solve the ODE
 y0 = [theta1_0, dot_theta1_0, theta2_0, dot_theta1_0]
@@ -129,20 +131,51 @@ line2, = ax.plot([], [], label='theta2')
 ax.set_xlabel('Temps')
 ax.set_ylabel('Theta')
 ax.set_title('Oscillations du système en fonction du temps')
+ax.set_xlim(0, 100)
 ax.legend()
 ax.grid(True)
+plt.plot(t, soltheta1, label='theta1', color='blue')
+plt.plot(t, soltheta2, label='theta2', color='red')
+
+
+# Collect data
+theta1_data = soltheta1  # Oscillation data for pendulum 1
+theta2_data = soltheta2  # Oscillation data for pendulum 2
+
+# Sampling frequency
+fs = 1 / (t[1] - t[0])  # Sample rate, inverse of time step
+
+# Perform FFT
+theta1_fft = fft(theta1_data)
+theta2_fft = fft(theta2_data)
+
+# Frequency axis
+freqs = fftfreq(len(theta1_data), 1 / fs)
+
+# Plot FFT results
+plt.figure()
+plt.plot(freqs, np.abs(theta1_fft), label='Pendulum 1')
+plt.plot(freqs, np.abs(theta2_fft), label='Pendulum 2')
+plt.xlabel('Frequency (Hz)')
+plt.ylabel('Amplitude')
+plt.title('Frequency Analysis')
+plt.xlim(-1,1)  # Zooming on the x-axis, adjust the range as needed
+plt.legend()
+plt.grid(True)
+plt.show()
 
 # Update plot in a loop
 t = 0
+
 while not Out:
     print(t)
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            Out = True  # Si la fenêtre est fermée, sortir de la boucle
-        if event.type == pygame.MOUSEBUTTONDOWN:  # Read if you want go out
-            pendulum = ball((width/2 - (d/2), height/4 + l),
-                            (width/2 + (d/2), height/4 + l), 5)
-            acceleration = True
+            if event.type == pygame.QUIT:
+                Out = True  # Si la fenêtre est fermée, sortir de la boucle
+            if event.type == pygame.MOUSEBUTTONDOWN:  # Read if you want go out
+                pendulum = ball((width/2 - (d/2), height/4 + l),
+                                (width/2 + (d/2), height/4 + l), 5)
+                acceleration = True
 
     if acceleration:   # Increase acceleration and damping in the pendulum moviment
         # Increment time
@@ -169,7 +202,7 @@ while not Out:
 
         # Redraw the plot
         ax.relim()
-        ax.autoscale_view()
+        #ax.autoscale_view()
 
     redraw()
 
