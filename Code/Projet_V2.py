@@ -6,6 +6,7 @@ from math import sin, cos, pi, sqrt
 import pygame
 import sys
 from scipy.fft import fft, fftfreq
+import sympy as sp  
 
 
 width, height = 800, 400
@@ -32,7 +33,7 @@ l = 50  # suspension length
 d = 100  # distance between pendulums where the spring is attached
 k = 5.0  # coefficient of spring stiffness
 g = 9.8  # acceleration due to gravity
-x = 0.5  # damping factor for lose of energy due to friction
+x = 0.3  # damping factor for lose of energy due to friction
 acceleration = False
 
 # Initial conditions
@@ -106,6 +107,36 @@ def G_adim(y, t):
     return np.array([d_theta1, dd_theta1, d_theta2, dd_theta2])
 
 
+# Définition des variables symboliques pour le calcul de la matrice jacobienne
+theta1_sym, dtheta1_sym, theta2_sym, dtheta2_sym = sp.symbols('theta1 dtheta1 theta2 dtheta2')
+y_sym = sp.Matrix([theta1_sym, dtheta1_sym, theta2_sym, dtheta2_sym])
+
+# Définition des équations différentielles symboliques
+d_theta1_sym = dtheta1_sym
+dd_theta1_sym = A*sp.sin(theta1_sym) - B*sp.sin(theta1_sym - theta2_sym) * \
+    (1 - (d / sp.sqrt(d**2 + 2*l**2*(1 - sp.cos(theta1_sym + theta2_sym))))) - x*dtheta1_sym
+d_theta2_sym = dtheta2_sym
+dd_theta2_sym = A*sp.sin(theta2_sym) - C*sp.sin(theta2_sym - theta1_sym) * \
+    (1 - (d / sp.sqrt(d**2 + 2*l**2*(1 - sp.cos(theta1_sym + theta2_sym))))) - x*dtheta2_sym
+
+# Définition du vecteur de dérivées
+f_sym = sp.Matrix([d_theta1_sym, dd_theta1_sym, d_theta2_sym, dd_theta2_sym])
+
+# Calcul de la matrice jacobienne
+J = f_sym.jacobian(y_sym)
+
+# Optionnellement, évaluation de la matrice jacobienne à des conditions initiales spécifiques
+initial_conditions = {
+    theta1_sym: theta1_0,
+    dtheta1_sym: dot_theta1_0,
+    theta2_sym: theta2_0,
+    dtheta2_sym: dot_theta2_0
+}
+J_evaluated = J.evalf(subs=initial_conditions)
+print("\nMatrice jacobienne évaluée aux conditions initiales:")
+sp.pprint(J_evaluated)
+
+
 # I start the class with some random coordinates
 pendulum = ball((-d/2 + width/2, l + height/4),
                 (d/2 + width/2, l + height/4), 5)
@@ -168,7 +199,6 @@ plt.show()
 t = 0
 
 while not Out:
-    print(t)
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 Out = True  # Si la fenêtre est fermée, sortir de la boucle
@@ -186,7 +216,7 @@ while not Out:
         sol, info = odeint(G_adim, y0, [0, t], full_output=True)
 
         # Accédez aux informations détaillées
-        print(info)
+        #print(info)
 
         # Extract theta1 and theta2
         theta1 = sol[-1, 0]
