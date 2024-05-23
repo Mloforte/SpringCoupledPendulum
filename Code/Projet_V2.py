@@ -24,16 +24,16 @@ Out = False  # if True,out of while loop, and close pygame
 m1 = 100  # pendulum mass 1
 m2 = 100  # pendulum mass 2
 l = 50  # suspension length
-d = 40  # distance between pendulums where the spring is attached
+d = 40 # distance between pendulums where the spring is attached
 k = 50.0  # coefficient of spring stiffness
 g = 9.8  # acceleration due to gravity
-D = 0.9  # damping factor
+D = 0.2  # damping factor
 acceleration = False
 
 # Initial conditions
-theta1_0 = -pi/4  # deviation of the first pendulum
-theta2_0 = -pi/4  # deviation of the second pendulum
-dot_theta1_0 = 0.0  # intial angular velocity of the first pendulum
+theta1_0 = pi/2  # deviation of the first pendulum
+theta2_0 = pi/2 # deviation of the second pendulum
+dot_theta1_0 = 0.1  # intial angular velocity of the first pendulum
 dot_theta2_0 = 0.0  # initial angular velocity of the second pendulum
 
 # Calculation of scaled parameters
@@ -185,35 +185,50 @@ def PlotFourier(theta1_data, theta2_data):
 
 def showJacobien():
     # Definition of the variables for the Jacobian matrix
-    theta1_sym, dtheta1_sym, theta2_sym, dtheta2_sym = sp.symbols(
-        'theta1 dtheta1 theta2 dtheta2')
-    y_sym = sp.Matrix([theta1_sym, dtheta1_sym, theta2_sym, dtheta2_sym])
+    # Define symbolic variables
+    theta1, theta2 = sp.symbols('theta1 theta2')
+    dtheta1, dtheta2 = sp.symbols('dtheta1 dtheta2')
+    ddtheta1, ddtheta2 = sp.symbols('ddtheta1 ddtheta2')
+    
+    # Defining the equations of motion
+    eq1 = A * sp.sin(theta1) - B * sp.sin(theta1 - theta2) * (1 - (d /
+                                                                sp.sqrt(d**2 + 2 * l**2 * (1 - sp.cos(theta1 + theta2))))) - D * dtheta1
+    eq2 = A * sp.sin(theta2) - C * sp.sin(theta2 - theta1) * (1 - (d /
+                                                                sp.sqrt(d**2 + 2 * l**2 * (1 - sp.cos(theta1 + theta2))))) - D * dtheta2
+    f_sym = sp.Matrix([dtheta1, eq1, dtheta2, eq2])
 
-    # Definition of the differential equations
-    d_theta1_sym = dtheta1_sym
-    dd_theta1_sym = A*sp.sin(theta1_sym) - B*sp.sin(theta1_sym - theta2_sym) * \
-        (1 - (d / sp.sqrt(d**2 + 2*l**2*(1 - sp.cos(theta1_sym + theta2_sym))))) - D*dtheta1_sym
-    d_theta2_sym = dtheta2_sym
-    dd_theta2_sym = A*sp.sin(theta2_sym) - C*sp.sin(theta2_sym - theta1_sym) * \
-        (1 - (d / sp.sqrt(d**2 + 2*l**2*(1 - sp.cos(theta1_sym + theta2_sym))))) - D*dtheta2_sym
+    # Define the Jacobian matrix function
 
-    # Definition of the derivative of the state vector
-    f_sym = sp.Matrix([d_theta1_sym, dd_theta1_sym,
-                      d_theta2_sym, dd_theta2_sym])
+    # Create a list of your symbolic variables
+    variables = [theta1, dtheta1, theta2, dtheta2]
 
-    # Calcul of the Jacobian matrix
-    J = f_sym.jacobian(y_sym)
+    # Compute the Jacobian matrix
+    jacobian_matrix = f_sym.jacobian(variables)
 
-    J_evaluated = J.evalf(subs={theta1_sym: theta1_stationary, dtheta1_sym: dtheta1_stationary,
-                          theta2_sym: theta2_stationary, dtheta2_sym: dtheta2_stationary})
+    # Substitute the stationary solution into the Jacobian matrix
+    jac_matrix_subs = jacobian_matrix.subs(
+        {theta1: theta1_stationary, dtheta1: dtheta1_stationary, theta2: theta2_stationary, dtheta2: dtheta2_stationary})
 
-    print("\nMatrice jacobienne évaluée aux conditions initiales:")
-    sp.pprint(J_evaluated)
+    # Print jac_matrix_subs for inspection
+    print("Jacobian Matrix (Substituted):")
+    sp.pprint(jac_matrix_subs)
+
+    # Substitute the stationary solution into the Jacobian matrix
+    jac_matrix_subs = jacobian_matrix.subs({theta1: theta1_stationary, dtheta1: dtheta1_stationary, theta2: theta2_stationary, dtheta2: dtheta2_stationary})
+
+    # Print jac_matrix_subs for inspection
+    print("Jacobian Matrix (Substituted):")
+    sp.pprint(jac_matrix_subs)
+
+    # Evaluate the symbolic expressions to floating point numbers
+    jac_matrix_eval = jac_matrix_subs.evalf()
+
+
     # Convert the SymPy matrix to a NumPy array
-    J_array = np.array(J_evaluated).astype(np.float64)
+    jac_matrix_array = np.array(jac_matrix_eval).astype(np.float64)
 
     # Calculate the eigenvalues of the Jacobian matrix
-    eigenvalues, _ = np.linalg.eig(J_array)
+    eigenvalues, _ = np.linalg.eig(jac_matrix_array)
 
     # Display the eigenvalues
     print("Eigenvalues of the Jacobian matrix at equilibrium:", eigenvalues)
@@ -222,7 +237,7 @@ def showJacobien():
 def StationarySolution(t):
     # Guess initial values for the stationary points
     # You can provide initial guesses based on your system
-    y_guess = [0, 0, 0, 0]
+    y_guess = [pi, 0, pi, 0]
 
     # Solve for the stationary points
     stationary_solution = fsolve(G_adim, y_guess, t)
@@ -265,9 +280,9 @@ soltheta2 = sol[:, 2]
 sold_theta2 = sol[:, 3]
 
 # Plot the results
-PlotTheta(soltheta1, soltheta2)
-Plotgraph(soltheta1, sold_theta1, soltheta2, sold_theta2)
-PlotFourier(soltheta1, soltheta2)
+# PlotTheta(soltheta1, soltheta2)
+# Plotgraph(soltheta1, sold_theta1, soltheta2, sold_theta2)
+# PlotFourier(soltheta1, soltheta2)
 
 # Update plot in a loop
 t = 0
